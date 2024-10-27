@@ -6,6 +6,26 @@ body {
     padding: 20px;
 }
 
+header {
+    background-image: url('Assets/banner.png'); 
+    background-size: cover;
+    background-position: center;
+    padding: 50px 0;
+    text-align: center;
+    position: relative;
+    width: 100%;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); 
+}
+
 .form-container {
     max-width: 1200px;
     background-color: #1e1e1e;
