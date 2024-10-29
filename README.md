@@ -13,5 +13,5 @@
 - This isn't an embedded **message system**, its an embedded **Video** system
 
 # Inquiries
-- Contact me via email at `starlover@starlover.online` if any issues occur
+- Contact me via email at `support@starlover.online` if any issues occur
 
