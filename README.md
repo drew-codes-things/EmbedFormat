@@ -12,6 +12,6 @@
 - The Video must be a x264 encoded video aswell otherwise you will most likely get no video and only sound
 - This isn't an embedded **message system**, its an embedded **Video** system
 
-# Inquiries
-- Contact me via email at `support@starlover.online` if any issues occur
+## Issues
+Contact me via <a href="mailto:support@starlover.online">support@starlover.online</a> in a case of any issues with an image and explanation
 
