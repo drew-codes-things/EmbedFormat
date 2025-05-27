@@ -1,4 +1,4 @@
-# Discord Video Formation
+# Discord Video Formation (DISCONTINUED)
 
 - This is a website based tool using html, js and css
 - I made this myself so i hope it is enjoyed
