@@ -66,7 +66,7 @@
     </div>
 
     <footer class="footer">
-        <img src="Assets/starlover.png" alt="Starlover Icon" class="footer-icon">
+        <img src="Assets/icon.png" alt="Starlover Icon" class="footer-icon">
         <p>© 2024 Made by Drew</p>
     </footer>
 
@@ -86,6 +86,10 @@
                 alert('Please enter both the title and link.');
                 return;
             }
+            if (!/^https?:\/\//i.test(movieLink)) {
+                alert('The movie link must start with http:// or https://');
+                return;
+            }
 
             if (backdropOption && backdropOption.value === 'search' && selectedBackdrop) {
                 backdropURL = 'https://image.tmdb.org/t/p/original' + selectedBackdrop.getAttribute('data-image-path');
@@ -99,7 +103,8 @@
                 generatedURL += `&i=${encodeURIComponent(backdropURL)}`;
             }
             
-            var markdownResult = `[${movieTitle}](${generatedURL})`;
+            // Brackets in the title would end the Markdown link early.
+            var markdownResult = `[${movieTitle.replace(/[\[\]]/g, '\\$&')}](${generatedURL})`;
             displayGeneratedURL(markdownResult);
         });
 
@@ -125,24 +130,53 @@
             var resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
             resultDiv.textContent = url;
+            resultDiv.title = 'Click to copy';
         }
 
-        document.getElementById('backdropSearch').addEventListener('input', function() {
-            var apiKey = document.getElementById('apiKey').value.trim();
-            var searchQuery = this.value.trim();
+        document.getElementById('result').addEventListener('click', function() {
+            var resultDiv = this;
+            var text = resultDiv.textContent;
+            navigator.clipboard.writeText(text).then(function() {
+                resultDiv.textContent = 'Copied! Paste it into Discord.';
+                setTimeout(function() { resultDiv.textContent = text; }, 1200);
+            }, function() {
+                alert('Could not copy - select the text and copy it yourself.');
+            });
+        });
 
+        var searchTimer = null;
+        var latestSearch = 0;
+
+        document.getElementById('backdropSearch').addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            var input = this;
+            // Wait for typing to pause, and ignore answers to older searches.
+            searchTimer = setTimeout(function() { searchBackdrops(input.value.trim()); }, 400);
+        });
+
+        function showSearchMessage(text) {
+            document.getElementById('backdropResults').textContent = text;
+        }
+
+        function searchBackdrops(searchQuery) {
+            var apiKey = document.getElementById('apiKey').value.trim();
             if (!apiKey || !searchQuery) return;
+            var searchId = ++latestSearch;
 
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', 'https://api.themoviedb.org/3/search/movie?api_key=' + apiKey + '&query=' + encodeURIComponent(searchQuery));
+            xhr.open('GET', 'https://api.themoviedb.org/3/search/movie?api_key=' + encodeURIComponent(apiKey) + '&query=' + encodeURIComponent(searchQuery));
             xhr.onload = function() {
+                if (searchId !== latestSearch) return;
+                if (xhr.status === 401) { showSearchMessage('TMDB rejected that API key.'); return; }
+                if (xhr.status !== 200) { showSearchMessage('TMDB search failed (HTTP ' + xhr.status + ').'); return; }
                 if (xhr.status === 200) {
                     var data = JSON.parse(xhr.responseText);
                     if (data.results && data.results.length > 0) {
                         var movieId = data.results[0].id;
                         var xhrBackdrop = new XMLHttpRequest();
-                        xhrBackdrop.open('GET', 'https://api.themoviedb.org/3/movie/' + movieId + '/images?api_key=' + apiKey);
+                        xhrBackdrop.open('GET', 'https://api.themoviedb.org/3/movie/' + movieId + '/images?api_key=' + encodeURIComponent(apiKey));
                         xhrBackdrop.onload = function() {
+                            if (searchId !== latestSearch) return;
                             if (xhrBackdrop.status === 200) {
                                 var backdropData = JSON.parse(xhrBackdrop.responseText);
                                 var backdropResults = backdropData.backdrops;
@@ -152,7 +186,7 @@
                                 if (backdropResults && backdropResults.length > 0) {
                                     backdropResults.slice(0, 5).forEach(function(image) {
                                         var imgElement = document.createElement('img');
-                                        imgElement.src = 'https://image.tmdb.org/t/p/w500/' + image.file_path;
+                                        imgElement.src = 'https://image.tmdb.org/t/p/w500' + image.file_path;
                                         imgElement.setAttribute('data-image-path', image.file_path);
                                         imgElement.addEventListener('click', function() {
                                             var selectedImages = document.querySelectorAll('.banner-results img.selected');
@@ -169,11 +203,16 @@
                             }
                         };
                         xhrBackdrop.send();
+                    } else {
+                        showSearchMessage('No movie found for that search.');
                     }
                 }
             };
+            xhr.onerror = function() {
+                if (searchId === latestSearch) showSearchMessage('Could not reach TMDB.');
+            };
             xhr.send();
-        });
+        }
     </script>
 </body>
 </html>
